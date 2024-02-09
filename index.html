@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Cut Transformation</title>
+    <style>
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Transform Video Cuts</h1>
+    <textarea id="inputTextArea" placeholder="Paste input here..."></textarea>
+    <textarea id="outputTextArea" placeholder="Transformed output will appear here..."></textarea>
+    <button onclick="transformText()">Transform</button>
+
+    <script>
+        function transformText() {
+            const inputText = document.getElementById('inputTextArea').value;
+            let outputText = processInput(inputText);
+            document.getElementById('outputTextArea').value = outputText;
+        }
+		function convertTextEntries(inputText) {
+    // Split the input text by double newlines to get each block of video and audio info together
+    const blocks = inputText.trim().split('\n\n');
+    const outputEntries = [];
+    const videoClipName = 'video.mp4';
+
+    let outputIndex = 1; // Start output index at 1
+
+    for (let i = 0; i < blocks.length; i += 2) { // Increment by 2 to process video-audio pairs
+        const videoBlock = blocks[i];
+        const audioBlock = blocks[i + 1];
+
+        // Split each block into lines and extract the necessary parts
+        const videoLines = videoBlock.split('\n');
+        const audioLines = audioBlock ? audioBlock.split('\n') : [];
+
+        // Extract start and end times from the video line
+        const videoParts = videoLines[0].split(/\s+/);
+        const startTime = videoParts[6];
+        const endTime = videoParts[7];
+
+        // Assuming audio track info is correctly placed in the audio block
+        const audioTrackInfo = audioLines.length > 1 ? audioLines[2].split(/\s+/).slice(1).join(' ') : '';
+
+        // Construct new entry
+        const newEntry = `${outputIndex.toString().padStart(3, '0')}  AX       V     C        ${startTime} ${endTime} 00:00:00:00 ${endTime} \n* FROM CLIP NAME: ${videoClipName}\nAUD  ${audioTrackInfo}`;
+
+        outputEntries.push(newEntry);
+        outputIndex++; // Increment output index for each pair processed
+    }
+
+    return outputEntries.join('\n\n');
+}
+
+function processInput(input) {
+    // Split the input by new lines
+    const lines = input.split('\n');
+    
+    // Validate that there are at least 3 lines for the header
+    if (lines.length < 3) {
+        throw new Error('Input does not contain enough lines for a header.');
+    }
+
+    // Separate the first 3 lines from the rest
+    const headerLines = lines.slice(0, 3);
+    const textEntries = lines.slice(3).join('\n');
+
+    // Call convertTextEntries with the rest of the lines
+    const convertedText = convertTextEntries(textEntries);
+
+    // Replace the first 3 lines with new title and FCM
+    const newHeader = `TITLE: Imported Cuts on Video.mp4\nFCM: NON-DROP FRAME`;
+
+    // Combine the new header with the converted text
+    const output = `${newHeader}\n\n${convertedText}`;
+
+    return output;
+}
+    </script>
+</body>
+</html>
