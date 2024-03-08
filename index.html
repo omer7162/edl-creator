@@ -26,67 +26,36 @@
     <script>
         function transformText() {
             const inputText = document.getElementById('inputTextArea').value;
-            let outputText = processInput(inputText);
+            let outputText = formatOutputWithTimestamps(inputText);
             document.getElementById('outputTextArea').value = outputText;
         }
-		function convertTextEntries(inputText) {
-    // Split the input text by double newlines to get each block of video and audio info together
-    const blocks = inputText.trim().split('\n\n');
-    const outputEntries = [];
-    const videoClipName = 'video.mp4';
+function formatOutputWithTimestamps(input) {
+  const lines = input.split('\n');
+  // Regex to match all timestamps in a line
+  const timestampRegex = /(\d{2}:\d{2}:\d{2}:\d{2})/g;
+  const uniqueTimestamps = new Set();
 
-    let outputIndex = 1; // Start output index at 1
-
-    for (let i = 0; i < blocks.length; i += 2) { // Increment by 2 to process video-audio pairs
-        const videoBlock = blocks[i];
-        const audioBlock = blocks[i + 1];
-
-        // Split each block into lines and extract the necessary parts
-        const videoLines = videoBlock.split('\n');
-        const audioLines = audioBlock ? audioBlock.split('\n') : [];
-
-        // Extract start and end times from the video line
-        const videoParts = videoLines[0].split(/\s+/);
-        const startTime = videoParts[6];
-        const endTime = videoParts[7];
-
-        // Assuming audio track info is correctly placed in the audio block
-        const audioTrackInfo = audioLines.length > 1 ? audioLines[2].split(/\s+/).slice(1).join(' ') : '';
-
-        // Construct new entry
-        const newEntry = `${outputIndex.toString().padStart(3, '0')}  AX       V     C        ${startTime} ${endTime} 00:00:00:00 ${endTime} \n* FROM CLIP NAME: ${videoClipName}\nAUD  ${audioTrackInfo}`;
-
-        outputEntries.push(newEntry);
-        outputIndex++; // Increment output index for each pair processed
+  lines.forEach(line => {
+    // Match against the regex to find all timestamps in the line
+    const matches = line.match(timestampRegex);
+    if (matches && matches.length > 2) {
+      // Add the last timestamp from the matches array
+      uniqueTimestamps.add(matches[matches.length - 1]);
     }
+  });
 
-    return outputEntries.join('\n\n');
+  let formattedOutput = `TITLE: Sequence of 4 Marked Cuts on Video.mp4\nFCM: NON-DROP FRAME\n\n`;
+  let counter = 1;
+
+  uniqueTimestamps.forEach(timestamp => {
+    formattedOutput += `00${counter.toString().padStart(2, '0')}  AX       V     C        00:00:00:00 ${timestamp} 00:00:00:00 ${timestamp}\n* FROM CLIP NAME: video.mp4\nAUD  3 4\n\n`;
+    counter++;
+  });
+
+  return formattedOutput.trim(); // Trim the final newline for consistency
 }
 
-function processInput(input) {
-    // Split the input by new lines
-    const lines = input.split('\n');
-    
-    // Validate that there are at least 3 lines for the header
-    if (lines.length < 3) {
-        throw new Error('Input does not contain enough lines for a header.');
-    }
 
-    // Separate the first 3 lines from the rest
-    const headerLines = lines.slice(0, 3);
-    const textEntries = lines.slice(3).join('\n');
-
-    // Call convertTextEntries with the rest of the lines
-    const convertedText = convertTextEntries(textEntries);
-
-    // Replace the first 3 lines with new title and FCM
-    const newHeader = `TITLE: Imported Cuts on Video.mp4\nFCM: NON-DROP FRAME`;
-
-    // Combine the new header with the converted text
-    const output = `${newHeader}\n\n${convertedText}`;
-
-    return output;
-}
     </script>
 </body>
 </html>
