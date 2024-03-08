@@ -33,27 +33,27 @@ function formatOutputWithTimestamps(input) {
   const lines = input.split('\n');
   // Regex to match all timestamps in a line
   const timestampRegex = /(\d{2}:\d{2}:\d{2}:\d{2})/g;
-  const uniqueTimestamps = new Set();
+  const timestamps = []; // Using an array to maintain order and allow for referencing previous timestamps
 
   lines.forEach(line => {
-    // Match against the regex to find all timestamps in the line
     const matches = line.match(timestampRegex);
-    if (matches && matches.length > 2) {
-      // Add the last timestamp from the matches array
-      uniqueTimestamps.add(matches[matches.length - 1]);
+    if (matches && matches.length > 3) {
+      // Add only the last timestamp from the matches to the timestamps array
+      timestamps.push(matches[matches.length - 1]);
     }
   });
 
   let formattedOutput = `TITLE: Sequence of 4 Marked Cuts on Video.mp4\nFCM: NON-DROP FRAME\n\n`;
-  let counter = 1;
+  let prevTimestamp = "00:00:00:00"; // Initialize previous timestamp as "00:00:00:00" for the first row
 
-  uniqueTimestamps.forEach(timestamp => {
-    formattedOutput += `00${counter.toString().padStart(2, '0')}  AX       V     C        00:00:00:00 ${timestamp} 00:00:00:00 ${timestamp}\n* FROM CLIP NAME: video.mp4\nAUD  3 4\n\n`;
-    counter++;
+  timestamps.forEach((timestamp, index) => {
+    formattedOutput += `00${(index + 1).toString().padStart(2, '0')}  AX       V     C        ${prevTimestamp} ${timestamp} 00:00:00:00 ${timestamp}\n* FROM CLIP NAME: video.mp4\nAUD  3 4\n\n`;
+    prevTimestamp = timestamp; // Update prevTimestamp with the current one for the next iteration
   });
 
   return formattedOutput.trim(); // Trim the final newline for consistency
 }
+
 
 
     </script>
